@@ -64,7 +64,7 @@ hunting lens ruins the shot. See `FocusEngine.update()`.
 |-------|------|-------------|-------|
 | 0 | 1–10 | Repo, webcam capture, folder structure | Python, OpenCV |
 | **1** | 10–35 | **AI Vision Engine** (face/eye/body) ✅ | MediaPipe |
-| 2 | 35–55 | Tracking: lock, motion prediction, re-ID | Kalman + embeddings |
+| **2** | 35–55 | **Tracking: lock, motion prediction, re-ID** ✅ | Kalman + HSV re-ID |
 | 3 | 55–75 | Distance (AI depth) + Focus + Lens DB | ONNX depth model |
 | 4 | 75–90 | First hardware: ESP32 + motor over wireless | ESP32, pyserial/BLE |
 | 5 | 90–100 | Flutter app: preview + tap-to-track | Flutter |
@@ -74,7 +74,7 @@ hunting lens ruins the shot. See `FocusEngine.update()`.
 | Module | Today | Upgrade path |
 |--------|-------|--------------|
 | Vision | ✅ real (MediaPipe) | custom ONNX models for objects |
-| Tracking | ⚠️ nearest-neighbor placeholder | Kalman filter + appearance re-ID |
+| Tracking | ✅ real (Kalman + IoU + HSV re-ID) | ONNX deep Re-ID embeddings |
 | LiDAR Fusion | ⚠️ face-size distance estimate | real LiDAR + AI depth fusion |
 | Focus | ✅ real smoothing logic | tune curves per lens |
 | Lens DB | ✅ interpolation, in-memory | JSON save/load, real calibration |

@@ -42,7 +42,7 @@ Camera frame
 | Phase | Module | Status |
 |-------|--------|--------|
 | **1** | AI Vision Engine (face / eye / body detection) | ✅ **Working** |
-| 2 | Tracking Engine | 🔲 Stubbed (interface ready) |
+| **2** | Tracking Engine (Kalman + re-ID) | ✅ **Working** |
 | 3 | LiDAR Fusion Engine | 🔲 Stubbed |
 | 4 | Focus Engine | 🔲 Stubbed |
 | 5 | Lens Database | 🔲 Stubbed |
@@ -102,7 +102,7 @@ ai-autofocus-system/
 
 - **Phase 0** (Days 1–10): Foundation — repo, webcam capture ✅
 - **Phase 1** (Days 10–35): AI Vision Engine — face/eye/body detection ✅
-- **Phase 2** (Days 35–55): Tracking Engine — subject lock + motion prediction
+- **Phase 2** (Days 35–55): Tracking Engine — Kalman motion prediction + re-ID ✅
 - **Phase 3** (Days 55–75): Distance + Focus logic (AI depth first, LiDAR later)
 - **Phase 4** (Days 75–90): First hardware — ESP32 + motor over wireless
 - **Phase 5** (Days 90–100): Flutter mobile app — preview + tap-to-track

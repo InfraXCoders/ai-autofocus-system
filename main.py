@@ -55,10 +55,24 @@ def open_capture(source: str):
     return cap
 
 
+def _iou(a, b):
+    ax2, ay2 = a.x + a.w, a.y + a.h
+    bx2, by2 = b.x + b.w, b.y + b.h
+    ix0, iy0 = max(a.x, b.x), max(a.y, b.y)
+    ix1, iy1 = min(ax2, bx2), min(ay2, by2)
+    iw, ih = max(0, ix1 - ix0), max(0, iy1 - iy0)
+    inter = iw * ih
+    if inter == 0:
+        return 0.0
+    union = a.w * a.h + b.w * b.h - inter
+    return inter / union if union > 0 else 0.0
+
+
 def draw_overlay(frame, state):
     subject = state["subject"]
     for d in state["detections"]:
-        if d is subject:
+        # Don't draw a faint box under the bold target box.
+        if subject is not None and d.kind == subject.kind and _iou(d, subject) > 0.5:
             continue
         color = {"face": CYAN, "eye": YELLOW, "body": MAGENTA}.get(d.kind, WHITE)
         cv2.rectangle(frame, (d.x, d.y), (d.x + d.w, d.y + d.h), color, 1)
@@ -69,7 +83,8 @@ def draw_overlay(frame, state):
                       (subject.x + subject.w, subject.y + subject.h), GREEN, 2)
         cx, cy = subject.center
         cv2.drawMarker(frame, (cx, cy), GREEN, cv2.MARKER_CROSS, 18, 2)
-        label = f"TARGET  {subject.kind}"
+        tid = f"#{subject.track_id}" if subject.track_id is not None else ""
+        label = f"TARGET {tid} {subject.kind}"
         if subject.distance_m is not None:
             label += f"  ~{subject.distance_m:.2f} m"
         cv2.putText(frame, label, (subject.x, subject.y - 8),
@@ -120,7 +135,7 @@ def main():
 
     def on_mouse(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
-            pipeline.select_at(x, y, latest["detections"])
+            pipeline.select_at(x, y)
 
     cv2.namedWindow(config.WINDOW_NAME)
     cv2.setMouseCallback(config.WINDOW_NAME, on_mouse)

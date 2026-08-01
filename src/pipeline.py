@@ -8,7 +8,7 @@ whole loop is demonstrable today and each module can be upgraded independently.
 """
 
 import config
-from .vision import VisionEngine, Detection
+from .vision import VisionEngine
 from .tracking import SubjectTracker
 from .lidar_fusion import DistanceEstimator
 from .focus import FocusEngine
@@ -35,7 +35,7 @@ class AutofocusPipeline:
     def step(self, frame_bgr) -> dict:
         """Process one frame. Returns a state dict for the UI/overlay."""
         detections = self.vision.process(frame_bgr)
-        subject = self.tracker.update(detections)
+        subject = self.tracker.update(detections, frame_bgr)
 
         distance_m = None
         focus_pos = self.focus.position
@@ -53,13 +53,9 @@ class AutofocusPipeline:
             "lost": self.tracker.is_lost(),
         }
 
-    def select_at(self, x: int, y: int, detections: list[Detection]) -> None:
-        """Tap-to-track: lock the detection under the (x, y) click."""
-        faces = [d for d in detections if d.kind in ("face", "body")]
-        for d in faces:
-            if d.x <= x <= d.x + d.w and d.y <= y <= d.y + d.h:
-                self.tracker.lock_on(d)
-                return
+    def select_at(self, x: int, y: int) -> None:
+        """Tap-to-track: lock the track under the (x, y) click."""
+        self.tracker.select_at(x, y)
 
     def close(self):
         self.vision.close()
