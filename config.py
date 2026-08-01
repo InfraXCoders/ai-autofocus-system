@@ -19,6 +19,6 @@ MIN_FOCUS_DISTANCE_M = 0.3           # closest focusable distance (meters)
 MAX_FOCUS_DISTANCE_M = 30.0
 
 # ---- Display ----
-WINDOW_NAME = "AI Autofocus — Vision Pod (Phase 1)"
+WINDOW_NAME = "AI Autofocus - Vision Pod (Phase 1)"
 DRAW_FPS = True
 DRAW_LANDMARKS = True

@@ -36,13 +36,16 @@ class SubjectTracker:
         Placeholder logic: pick the face/body nearest the last known position.
         Auto-locks the largest face if nothing is locked yet.
         """
-        candidates = [d for d in detections if d.kind in ("face", "body")]
+        # Prefer faces (that's what a focus puller cares about); fall back to
+        # bodies only when no face is visible (e.g. subject facing away).
+        faces = [d for d in detections if d.kind == "face"]
+        candidates = faces if faces else [d for d in detections if d.kind == "body"]
         if not candidates:
             self._frames_since_seen += 1
             return None
 
         if self._locked_center is None:
-            # Auto-lock the largest face (or body) as a sensible default.
+            # Auto-lock the largest (closest) subject as a sensible default.
             target = max(candidates, key=lambda d: d.area)
             self.lock_on(target)
             target.track_id = self.active_id
