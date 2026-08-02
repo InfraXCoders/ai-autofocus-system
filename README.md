@@ -43,10 +43,10 @@ Camera frame
 |-------|--------|--------|
 | **1** | AI Vision Engine (face / eye / body detection) | ✅ **Working** |
 | **2** | Tracking Engine (Kalman + re-ID) | ✅ **Working** |
-| 3 | LiDAR Fusion Engine | 🔲 Stubbed |
-| 4 | Focus Engine | 🔲 Stubbed |
-| 5 | Lens Database | 🔲 Stubbed |
-| 6 | Wireless Communication | 🔲 Stubbed |
+| **3** | LiDAR Fusion Engine (multi-cue distance) | ✅ **Working** (pre-LiDAR) |
+| **4** | Focus Engine (+ manual calibration mode) | ✅ **Working** |
+| **5** | Lens Database (curves + JSON persistence) | ✅ **Working** |
+| 6 | Wireless Communication | 🔲 Stubbed (virtual motor) |
 | 7 | Mobile App (Flutter) | 🔲 Not started |
 
 ---
@@ -65,14 +65,31 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Press **`q`** to quit the preview window.
-
 ### Options
 
 ```bash
 python main.py --source 0            # webcam index (default 0)
 python main.py --source video.mp4    # run on a video file
 python main.py --no-mesh             # faster: skip detailed eye mesh
+```
+
+### Controls
+
+| Key | Action |
+|-----|--------|
+| click | tap-to-track — lock focus onto a subject |
+| `l` | cycle the active lens |
+| `c` | toggle calibration mode (pauses auto-focus) |
+| `i` / `k` | while calibrating: rack focus in / out by hand |
+| `a` | while calibrating: save a calibration point at the subject's current distance |
+| `s` | save the active lens's calibration to disk |
+| `q` | quit |
+
+### Automated tests (no webcam needed)
+
+```bash
+.venv/bin/python -m tests.test_tracking          # Phase 1-2: detection + tracking
+.venv/bin/python -m tests.test_focus_and_lens    # Phase 3: distance fusion + lens DB
 ```
 
 ---
@@ -86,12 +103,15 @@ ai-autofocus-system/
 ├── requirements.txt
 ├── src/
 │   ├── pipeline.py          # Wires all modules together
-│   ├── vision/              # Module 1: AI Vision Engine  ✅
-│   ├── tracking/            # Module 2: Tracking Engine    (stub)
-│   ├── lidar_fusion/        # Module 3: LiDAR Fusion       (stub)
-│   ├── focus/               # Module 4: Focus Engine       (stub)
-│   ├── lens_db/             # Module 5: Lens Database      (stub)
-│   └── comms/               # Module 6: Wireless Comm      (stub)
+│   ├── geometry.py          # Shared IoU helper
+│   ├── vision/              # Module 1: AI Vision Engine        ✅
+│   ├── tracking/            # Module 2: Tracking Engine         ✅
+│   ├── lidar_fusion/        # Module 3: LiDAR Fusion            ✅ (pre-LiDAR)
+│   ├── focus/               # Module 4: Focus Engine            ✅
+│   ├── lens_db/             # Module 5: Lens Database           ✅
+│   └── comms/               # Module 6: Wireless Comm           (stub)
+├── tests/                   # Automated tests (no webcam needed)
+├── data/                    # Local lens calibration (gitignored)
 └── docs/
     └── architecture.md      # Full architecture + roadmap
 ```
@@ -103,7 +123,7 @@ ai-autofocus-system/
 - **Phase 0** (Days 1–10): Foundation — repo, webcam capture ✅
 - **Phase 1** (Days 10–35): AI Vision Engine — face/eye/body detection ✅
 - **Phase 2** (Days 35–55): Tracking Engine — Kalman motion prediction + re-ID ✅
-- **Phase 3** (Days 55–75): Distance + Focus logic (AI depth first, LiDAR later)
+- **Phase 3** (Days 55–75): Distance + Focus logic — multi-cue fusion + lens calibration ✅
 - **Phase 4** (Days 75–90): First hardware — ESP32 + motor over wireless
 - **Phase 5** (Days 90–100): Flutter mobile app — preview + tap-to-track
 

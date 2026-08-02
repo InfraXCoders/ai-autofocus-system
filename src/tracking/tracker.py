@@ -16,23 +16,10 @@ Interface is unchanged for the pipeline: `update()`, `select_at()`, `is_lost()`,
 `active_id` — only the internals got real.
 """
 
+from ..geometry import iou_xywh
 from ..vision.types import Detection
 from . import reid
 from .track import Track
-
-
-def _iou(a_xywh, b_xywh) -> float:
-    ax, ay, aw, ah = a_xywh
-    bx, by, bw, bh = b_xywh
-    ax2, ay2, bx2, by2 = ax + aw, ay + ah, bx + bw, by + bh
-    ix0, iy0 = max(ax, bx), max(ay, by)
-    ix1, iy1 = min(ax2, bx2), min(ay2, by2)
-    iw, ih = max(0, ix1 - ix0), max(0, iy1 - iy0)
-    inter = iw * ih
-    if inter == 0:
-        return 0.0
-    union = aw * ah + bw * bh - inter
-    return inter / union if union > 0 else 0.0
 
 
 class SubjectTracker:
@@ -122,7 +109,7 @@ class SubjectTracker:
         matches, pairs = [], []
         for di, d in enumerate(dets):
             for ti, t in enumerate(self.tracks):
-                iou = _iou((d.x, d.y, d.w, d.h), t.bbox_xywh)
+                iou = iou_xywh((d.x, d.y, d.w, d.h), t.bbox_xywh)
                 if iou >= self.iou_threshold:
                     pairs.append((iou, di, ti))
 

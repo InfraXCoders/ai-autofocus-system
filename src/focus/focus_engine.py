@@ -7,6 +7,8 @@ PHASE GOAL:
   * distance_m + lens curve -> focus position
   * Smooth "cinematic" transitions (no jitter, no hunting)
   * Respect a latency budget (focus must feel responsive, < ~100ms)
+  * Support a manual calibration mode (Phase 3): the operator racks focus by
+    hand at a known distance so the Lens Database can record that point.
 
 CURRENT STATE: exponential smoothing between the previous and target positions.
 This is the safety-critical module: if the subject is lost it should HOLD the
@@ -22,14 +24,29 @@ class FocusEngine:
         self.smoothing = smoothing
         self._current_position: float = 0.0  # 0..1 focus-ring position
         self._has_target = False
+        self.manual_override = False  # True while the operator is calibrating
+
+    def nudge_manual(self, delta: float) -> float:
+        """Manually rack focus by `delta` (calibration mode). Disables auto-focus
+        until `resume_auto()` is called, so a locked subject doesn't fight the
+        operator's hand."""
+        self.manual_override = True
+        self._current_position = max(0.0, min(1.0, self._current_position + delta))
+        self._has_target = True
+        return self._current_position
+
+    def resume_auto(self) -> None:
+        self.manual_override = False
 
     def update(self, distance_m: float | None, lens: LensProfile) -> float:
         """Return the smoothed focus-ring position (0..1) to send to the motor.
 
         If distance is None (subject lost), HOLD the current position — a
         deliberate safety choice so focus never hunts when tracking drops.
+        While `manual_override` is set (calibration mode), auto-focus is
+        suspended so hand-racked positions aren't immediately overwritten.
         """
-        if distance_m is None:
+        if self.manual_override or distance_m is None:
             return self._current_position
 
         target = lens.focus_position(distance_m)

@@ -65,7 +65,7 @@ hunting lens ruins the shot. See `FocusEngine.update()`.
 | 0 | 1–10 | Repo, webcam capture, folder structure | Python, OpenCV |
 | **1** | 10–35 | **AI Vision Engine** (face/eye/body) ✅ | MediaPipe |
 | **2** | 35–55 | **Tracking: lock, motion prediction, re-ID** ✅ | Kalman + HSV re-ID |
-| 3 | 55–75 | Distance (AI depth) + Focus + Lens DB | ONNX depth model |
+| **3** | 55–75 | **Distance fusion + Focus + Lens DB calibration** ✅ | multi-cue fusion, JSON |
 | 4 | 75–90 | First hardware: ESP32 + motor over wireless | ESP32, pyserial/BLE |
 | 5 | 90–100 | Flutter app: preview + tap-to-track | Flutter |
 
@@ -75,9 +75,9 @@ hunting lens ruins the shot. See `FocusEngine.update()`.
 |--------|-------|--------------|
 | Vision | ✅ real (MediaPipe) | custom ONNX models for objects |
 | Tracking | ✅ real (Kalman + IoU + HSV re-ID) | ONNX deep Re-ID embeddings |
-| LiDAR Fusion | ⚠️ face-size distance estimate | real LiDAR + AI depth fusion |
-| Focus | ✅ real smoothing logic | tune curves per lens |
-| Lens DB | ✅ interpolation, in-memory | JSON save/load, real calibration |
+| LiDAR Fusion | ✅ real fusion of face-width + body-height cues, temporally smoothed | swap in real LiDAR + a monocular depth network (e.g. MiDaS ONNX) as a third cue |
+| Focus | ✅ real smoothing logic + manual calibration mode | tune curves per lens; latency profiling on real hardware |
+| Lens DB | ✅ interpolation + JSON persistence + calibration workflow | UI for calibration in the mobile app (Phase 5) |
 | Wireless | ⚠️ virtual motor (no-op) | ESP-NOW / BLE transport |
 
 ## 6. Team & effort (honest estimate)

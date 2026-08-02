@@ -12,6 +12,9 @@ env/
 *.mp4
 *.mov
 
+# User calibration data (machine/session specific)
+data/lens_profiles.json
+
 # OS / editor
 .DS_Store
 .idea/
