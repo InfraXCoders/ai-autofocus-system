@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Cinema Autofocus — Remote Test</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --border: #2a313c;
+    --text: #e6e6e6;
+    --muted: #9aa4af;
+    --green: #2ecc71;
+    --amber: #ffb347;
+    --red: #e74c3c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  h1 { font-size: 1.1rem; margin: 4px 0 2px; }
+  .sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 12px; text-align: center; }
+  .status {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .status.connecting { color: var(--amber); }
+  .status.connected { color: var(--green); }
+  .status.disconnected, .status.error { color: var(--red); }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #display {
+    width: 100%;
+    display: block;
+    background: #000;
+    cursor: crosshair;
+  }
+  .hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: 8px 0 4px;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 12px;
+    max-width: 720px;
+  }
+  button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  button:active { transform: scale(0.97); }
+  button.primary { border-color: var(--green); color: var(--green); }
+
+  .footer {
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-top: 18px;
+    text-align: center;
+    max-width: 520px;
+  }
+
+  video { display: none; }
+  canvas#capture { display: none; }
+</style>
+</head>
+<body>
+
+<h1>AI Cinema Autofocus — Remote Test</h1>
+<div class="sub">Uses YOUR camera, right here in the browser. Nothing is recorded or stored.</div>
+<div id="status" class="status connecting">Connecting…</div>
+
+<div class="stage">
+  <img id="display" alt="Waiting for camera…" />
+</div>
+<div class="hint">Tap/click a face on the video to lock focus onto it (tap-to-track)</div>
+
+<div class="controls">
+  <button onclick="sendKey('l')">🔍 Lens</button>
+  <button id="calBtn" class="primary" onclick="sendKey('c')">🎯 Calibrate</button>
+  <button onclick="sendKey('k')">➖ Focus</button>
+  <button onclick="sendKey('i')">➕ Focus</button>
+  <button onclick="sendKey('a')">📍 Add Point</button>
+  <button onclick="sendKey('s')">💾 Save</button>
+</div>
+
+<div class="footer">
+  Camera video is captured locally and streamed only to this session's server
+  for live AI processing — it is not saved to disk or shared elsewhere.
+</div>
+
+<video id="video" autoplay muted playsinline></video>
+<canvas id="capture"></canvas>
+
+<script>
+const statusEl = document.getElementById('status');
+const displayEl = document.getElementById('display');
+const video = document.getElementById('video');
+const captureCanvas = document.getElementById('capture');
+const captureCtx = captureCanvas.getContext('2d');
+const calBtn = document.getElementById('calBtn');
+
+function setStatus(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = 'status ' + cls;
+}
+
+const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+let ws = null;
+let awaitingReply = false;
+let lastSendTime = 0;
+const SEND_INTERVAL_MS = 100; // ~10 fps, kept modest for tunnel bandwidth
+let calibrating = false;
+
+function connect() {
+  ws = new WebSocket(wsProto + '//' + location.host + '/ws');
+
+  ws.onopen = () => setStatus('Connected', 'connected');
+  ws.onclose = () => {
+    setStatus('Disconnected — retrying…', 'disconnected');
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = () => setStatus('Connection error', 'error');
+
+  ws.onmessage = (evt) => {
+    const msg = JSON.parse(evt.data);
+    if (msg.type === 'frame') {
+      displayEl.src = msg.image;
+      awaitingReply = false;
+      calibrating = !!(msg.state && msg.state.calibrating);
+      calBtn.textContent = calibrating ? '▶️ Resume Auto' : '🎯 Calibrate';
+    }
+  };
+}
+
+function sendKey(key) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'key', key }));
+  }
+}
+
+displayEl.addEventListener('click', (e) => {
+  if (!displayEl.naturalWidth) return;
+  const rect = displayEl.getBoundingClientRect();
+  const scaleX = displayEl.naturalWidth / rect.width;
+  const scaleY = displayEl.naturalHeight / rect.height;
+  const x = Math.round((e.clientX - rect.left) * scaleX);
+  const y = Math.round((e.clientY - rect.top) * scaleY);
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'select', x, y }));
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (['l', 'c', 'i', 'k', 'a', 's'].includes(e.key)) sendKey(e.key);
+});
+
+function sendLoop(ts) {
+  if (ws && ws.readyState === WebSocket.OPEN && !awaitingReply &&
+      ts - lastSendTime > SEND_INTERVAL_MS && video.videoWidth) {
+    lastSendTime = ts;
+    awaitingReply = true;
+    captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+    const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.6);
+    ws.send(JSON.stringify({ type: 'frame', image: dataUrl }));
+  }
+  requestAnimationFrame(sendLoop);
+}
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false,
+    });
+    video.srcObject = stream;
+    await video.play();
+    captureCanvas.width = video.videoWidth || 640;
+    captureCanvas.height = video.videoHeight || 480;
+    requestAnimationFrame(sendLoop);
+  } catch (err) {
+    setStatus('Camera access denied: ' + err.message, 'error');
+    displayEl.alt = 'Camera access is required — please allow it and reload the page.';
+  }
+}
+
+connect();
+startCamera();
+</script>
+</body>
+</html>

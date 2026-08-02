@@ -3,6 +3,10 @@ opencv-python>=4.9.0
 mediapipe>=0.10.14
 numpy>=1.26.0
 
+# Web demo (web_main.py) — lets a remote tester use their own camera
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+
 # Later phases (uncomment when needed)
 # onnxruntime>=1.17.0      # Phase 3: custom AI models
 # pyserial>=3.5            # Phase 4: talk to ESP32 over serial/USB

@@ -94,22 +94,56 @@ python main.py --no-mesh             # faster: skip detailed eye mesh
 
 ---
 
+## Remote testing (share with someone else via ngrok)
+
+`main.py` opens a window using *your* camera — there's nothing to share. To let
+someone else test with **their own camera** over the internet, use the web
+demo instead: their browser captures their webcam, streams frames to your
+machine over WebSocket, and gets back the same AI-annotated video in real time.
+
+```bash
+# 1. Install ngrok (one-time)
+brew install ngrok/ngrok/ngrok
+ngrok config add-authtoken <your-token>   # free account at ngrok.com
+
+# 2. Start the web server
+python web_main.py                 # serves on http://localhost:8000
+# if 8000 is taken: python web_main.py --port 8010
+
+# 3. In another terminal, open a tunnel
+ngrok http 8000                    # (match the port from step 2)
+```
+
+`ngrok` prints an `https://....ngrok-free.app` URL — send that to your tester.
+When they open it and allow camera access, they'll see the same live overlay
+(boxes, distance, focus HUD) running on their own face, and can use the same
+tap-to-track + calibration controls as the desktop app.
+
+Each browser tab gets an independent tracker/lens session, so multiple people
+can open the link at once without interfering with each other. Video is
+processed in memory only — never written to disk.
+
+---
+
 ## Repository Structure
 
 ```
 ai-autofocus-system/
-├── main.py                  # Entry point — runs the pipeline on webcam/video
+├── main.py                  # Desktop entry point — runs the pipeline on YOUR webcam/video
+├── web_main.py              # Web entry point — lets a remote tester use THEIR camera
 ├── config.py                # Central settings
 ├── requirements.txt
 ├── src/
 │   ├── pipeline.py          # Wires all modules together
 │   ├── geometry.py          # Shared IoU helper
+│   ├── overlay.py           # Shared HUD/box drawing (desktop + web)
 │   ├── vision/              # Module 1: AI Vision Engine        ✅
 │   ├── tracking/            # Module 2: Tracking Engine         ✅
 │   ├── lidar_fusion/        # Module 3: LiDAR Fusion            ✅ (pre-LiDAR)
 │   ├── focus/               # Module 4: Focus Engine            ✅
 │   ├── lens_db/             # Module 5: Lens Database           ✅
 │   └── comms/               # Module 6: Wireless Comm           (stub)
+├── web/                     # FastAPI + browser front-end for remote testing (ngrok)
 ├── tests/                   # Automated tests (no webcam needed)
 ├── data/                    # Local lens calibration (gitignored)
 └── docs/
