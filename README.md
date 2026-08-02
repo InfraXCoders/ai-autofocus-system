@@ -107,11 +107,11 @@ brew install ngrok/ngrok/ngrok
 ngrok config add-authtoken <your-token>   # free account at ngrok.com
 
 # 2. Start the web server
-python web_main.py                 # serves on http://localhost:8000
-# if 8000 is taken: python web_main.py --port 8010
+python web_main.py                 # serves on http://localhost:8010
+# if 8010 is taken: python web_main.py --port 8020
 
 # 3. In another terminal, open a tunnel
-ngrok http 8000                    # (match the port from step 2)
+ngrok http 8010                    # (match the port from step 2)
 ```
 
 `ngrok` prints an `https://....ngrok-free.app` URL — send that to your tester.
