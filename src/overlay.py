@@ -80,10 +80,25 @@ def draw_hud(frame, state, fps, draw_fps=True, help_text=None):
         help_text = (
             "c: calibrate | i/k: rack focus | a: add point | s: save"
             if state["calibrating"] else
-            "click: lock focus | l: lens | c: calibrate | s: save | q: quit"
+            "click: lock focus | l: lens | n: rename | c: calibrate | s: save | q: quit"
         )
     cv2.putText(frame, help_text, (10, h - 12),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, WHITE, 1)
+
+
+def draw_text_input(frame, prompt: str, buffer: str):
+    """On-screen text entry box for the desktop app (e.g. renaming a lens),
+    since an OpenCV window has no native text field."""
+    h, w = frame.shape[:2]
+    box_y = h // 2 - 30
+    panel = frame.copy()
+    cv2.rectangle(panel, (20, box_y), (w - 20, box_y + 60), BLACK, -1)
+    cv2.addWeighted(panel, 0.7, frame, 0.3, 0, frame)
+    cv2.rectangle(frame, (20, box_y), (w - 20, box_y + 60), AMBER, 1)
+    cv2.putText(frame, prompt, (30, box_y + 20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, AMBER, 1)
+    cv2.putText(frame, buffer + "_", (30, box_y + 45),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, WHITE, 1)
 
 
 def handle_key(pipeline, key: str, last_distance_m: float | None, calibration_step: float):

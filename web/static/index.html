@@ -106,6 +106,7 @@
 
 <div class="controls">
   <button onclick="sendKey('l')">🔍 Lens</button>
+  <button onclick="renameLens()">✏️ Rename Lens</button>
   <button id="calBtn" class="primary" onclick="sendKey('c')">🎯 Calibrate</button>
   <button onclick="sendKey('k')">➖ Focus</button>
   <button onclick="sendKey('i')">➕ Focus</button>
@@ -140,6 +141,7 @@ let awaitingReply = false;
 let lastSendTime = 0;
 const SEND_INTERVAL_MS = 100; // ~10 fps, kept modest for tunnel bandwidth
 let calibrating = false;
+let currentLensName = '';
 
 function connect() {
   ws = new WebSocket(wsProto + '//' + location.host + '/ws');
@@ -158,6 +160,7 @@ function connect() {
       awaitingReply = false;
       calibrating = !!(msg.state && msg.state.calibrating);
       calBtn.textContent = calibrating ? '▶️ Resume Auto' : '🎯 Calibrate';
+      if (msg.state && msg.state.lens) currentLensName = msg.state.lens;
     }
   };
 }
@@ -165,6 +168,13 @@ function connect() {
 function sendKey(key) {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'key', key }));
+  }
+}
+
+function renameLens() {
+  const name = prompt('Lens name (e.g. "Sigma 18-35mm T2"):', currentLensName);
+  if (name && name.trim() && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'rename_lens', name: name.trim() }));
   }
 }
 

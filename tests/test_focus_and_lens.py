@@ -121,6 +121,36 @@ def test_lens_database_cycle_active():
     assert db.active == first
 
 
+def test_rename_active_preserves_calibration():
+    db = LensDatabase()
+    original = db.active
+    db.active_profile().add_point(1.5, 0.6)
+
+    db.rename_active("Sigma 18-35mm T2")
+
+    assert db.active == "Sigma 18-35mm T2"
+    assert original not in db.names()
+    assert (1.5, 0.6) in db.active_profile().calibration
+
+
+def test_rename_active_rejects_collision_with_another_lens():
+    db = LensDatabase()
+    other_name = [n for n in db.names() if n != db.active][0]
+    try:
+        db.rename_active(other_name)
+        assert False, "expected ValueError when renaming to an existing lens's name"
+    except ValueError:
+        pass
+    assert db.active in db.names()  # unchanged
+
+
+def test_rename_active_ignores_blank_name():
+    db = LensDatabase()
+    original = db.active
+    db.rename_active("   ")
+    assert db.active == original
+
+
 # ---- FocusEngine calibration mode ----
 
 def test_manual_override_pauses_auto_focus():

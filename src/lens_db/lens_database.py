@@ -104,6 +104,20 @@ class LensDatabase:
         self.active = names[(idx + 1) % len(names)]
         return self.active
 
+    def rename_active(self, new_name: str) -> None:
+        """Rename the active lens in place (calibration is preserved). Use
+        this to replace a placeholder name like "Generic 50mm" with your
+        actual lens, e.g. "Sigma 18-35mm T2"."""
+        new_name = new_name.strip()
+        if not new_name or new_name == self.active:
+            return
+        if new_name in self._lenses and new_name != self.active:
+            raise ValueError(f"A lens named '{new_name}' already exists")
+        profile = self._lenses.pop(self.active)
+        profile.name = new_name
+        self._lenses[new_name] = profile
+        self.active = new_name
+
     # ---- Persistence ----
     def save_to_disk(self, path: str | Path | None = None) -> None:
         path = Path(path) if path else self.profiles_path

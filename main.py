@@ -11,6 +11,8 @@ Click a face to lock focus onto it (tap-to-track).
 
 Lens calibration (Phase 3):
     l           cycle the active lens
+    n           rename the active lens (type the name, Enter to confirm,
+                Esc to cancel)
     c           toggle calibration mode (pauses auto-focus)
     i / k       while calibrating: rack focus in / out by hand
     a           while calibrating: save a calibration point at the
@@ -34,8 +36,12 @@ import time
 import cv2
 
 import config
-from src.overlay import draw_hud, draw_overlay, handle_key
+from src.overlay import draw_hud, draw_overlay, draw_text_input, handle_key
 from src.pipeline import AutofocusPipeline
+
+_ENTER_KEYS = (13, 10)
+_BACKSPACE_KEYS = (8, 127)
+_ESCAPE_KEY = 27
 
 
 def parse_args():
@@ -79,6 +85,8 @@ def main():
 
     prev_t = time.time()
     fps = 0.0
+    typing = False
+    input_buffer = ""
     try:
         while True:
             ok, frame = cap.read()
@@ -96,13 +104,33 @@ def main():
 
             draw_overlay(frame, state)
             draw_hud(frame, state, fps, draw_fps=config.DRAW_FPS)
+            if typing:
+                draw_text_input(frame, "New lens name (Enter to confirm, Esc to cancel):",
+                                 input_buffer)
 
             cv2.imshow(config.WINDOW_NAME, frame)
             key = cv2.waitKey(1) & 0xFF
+
+            if typing:
+                if key in _ENTER_KEYS:
+                    pipeline.lenses.rename_active(input_buffer)
+                    typing = False
+                elif key == _ESCAPE_KEY:
+                    typing = False
+                elif key in _BACKSPACE_KEYS:
+                    input_buffer = input_buffer[:-1]
+                elif 32 <= key < 127:
+                    input_buffer += chr(key)
+                continue
+
             if key == ord("q"):
                 break
-            handle_key(pipeline, chr(key) if 32 <= key < 127 else "",
-                       state["distance_m"], config.CALIBRATION_STEP)
+            elif key == ord("n"):
+                typing = True
+                input_buffer = ""
+            else:
+                handle_key(pipeline, chr(key) if 32 <= key < 127 else "",
+                           state["distance_m"], config.CALIBRATION_STEP)
     finally:
         cap.release()
         cv2.destroyAllWindows()

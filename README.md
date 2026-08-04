@@ -79,6 +79,7 @@ python main.py --no-mesh             # faster: skip detailed eye mesh
 |-----|--------|
 | click | tap-to-track — lock focus onto a subject |
 | `l` | cycle the active lens |
+| `n` | rename the active lens (e.g. "Generic 50mm" → your real lens) |
 | `c` | toggle calibration mode (pauses auto-focus) |
 | `i` / `k` | while calibrating: rack focus in / out by hand |
 | `a` | while calibrating: save a calibration point at the subject's current distance |
