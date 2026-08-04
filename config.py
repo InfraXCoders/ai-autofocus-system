@@ -27,6 +27,11 @@ MAX_FOCUS_DISTANCE_M = 30.0
 LENS_PROFILES_PATH = Path(__file__).parent / "data" / "lens_profiles.json"
 CALIBRATION_STEP = 0.02              # manual focus-ring nudge per key press
 
+# ---- Wireless Communication / Focus Motor (Phase 4) ----
+MOTOR_TRANSPORT = "virtual"          # "virtual" (no hardware) or "serial" (ESP32 over USB)
+MOTOR_SERIAL_PORT = None             # e.g. "/dev/tty.usbserial-0001" once hardware is connected
+MOTOR_SERIAL_BAUD = 115200           # must match Serial.begin(...) in the ESP32 firmware
+
 # ---- Display ----
 WINDOW_NAME = "AI Autofocus - Vision Pod (Phase 1)"
 DRAW_FPS = True

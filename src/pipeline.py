@@ -3,8 +3,10 @@
     frame -> VisionEngine -> SubjectTracker -> DistanceEstimator
           -> FocusEngine (+ LensDatabase) -> MotorLink
 
-Phase 1 runs Vision + Tracking for real; the rest run in "simulation" so the
-whole loop is demonstrable today and each module can be upgraded independently.
+Vision, Tracking, Distance, Focus, and Lens DB run for real. MotorLink
+defaults to a "virtual" no-op transport so the whole loop works with zero
+hardware attached; set config.MOTOR_TRANSPORT="serial" once an ESP32 is
+connected (see docs/hardware.md) to send real focus commands over USB.
 """
 
 import config
@@ -31,7 +33,11 @@ class AutofocusPipeline:
         )
         self.lenses = LensDatabase(profiles_path=config.LENS_PROFILES_PATH)
         self.focus = FocusEngine(config.FOCUS_SMOOTHING)
-        self.motor = MotorLink(transport="virtual")
+        self.motor = MotorLink(
+            transport=config.MOTOR_TRANSPORT,
+            port=config.MOTOR_SERIAL_PORT,
+            baud=config.MOTOR_SERIAL_BAUD,
+        )
 
     def step(self, frame_bgr) -> dict:
         """Process one frame. Returns a state dict for the UI/overlay."""
@@ -65,3 +71,4 @@ class AutofocusPipeline:
 
     def close(self):
         self.vision.close()
+        self.motor.close()
